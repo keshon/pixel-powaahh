@@ -4,7 +4,7 @@ Welcome to the incredible world of Pixel Powaahh! This badass application is her
 
 ### Unleash the Powaahh!
 
-Pixel Powaahh is not your ordinary image optimizer. It's an unstoppable force that will make your images faster, smaller, and more powerful than ever before. With a touch of comedy and a whole lot of swagger, Pixel Powaahh brings the fun back into the world of pixel optimization.
+Pixel Powaahh is not your ordinary image optimizer. It's an unstoppable force that will make your images faster, smaller, and more powerful than ever before.
 
 ### Features that Pack a Punch!
 
@@ -58,4 +58,4 @@ If you have any epic ideas, pixel-pounding bug reports, or feature requests shar
 I asked ChatGPT for help (thank you digital brain!).
 
 ### License
-Pixel Powaahh is lisenced under Unlicense whatever it means. Just play fair and be nice.
+Pixel Powaahh is licensed under Unlicense whatever it means. Just play fair and be nice.
