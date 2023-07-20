@@ -1,61 +1,56 @@
-## Pixel Powaahh - Pump Up Your Images with Optimized Awesomeness!
+# Pixel Powaahh - Image Optimizer and Converter
 
-Welcome to the incredible world of Pixel Powaahh! This badass application is here to help you optimize and convert your images like never before. Get ready to witness the mind-blowing transformation of your pictures into lean, mean, and pixel-perfect machines!
+## Introduction
 
-### Unleash the Powaahh!
+Pixel Powaahh is a simple command-line tool for optimizing and converting image files. The idea behind this project is driven by a mix of impatience and curiosity. I recently found myself using a web service called TinyPNG to optimize a bunch of images, but I struggled with the limitations in uploading quotas. I realized I needed my own solution, a tool that could automate this process and make my life a little easier. And that's how Pixel Powaahh was born.
 
-Pixel Powaahh is not your ordinary image optimizer. It's an unstoppable force that will make your images faster, smaller, and more powerful than ever before.
+## Features
 
-### Features that Pack a Punch!
+- Compress JPEG images with adjustable quality settings.
+- Compress PNG images using a quantization algorithm.
+- Converts images to the modern and efficient WebP format.
 
-- **JPG and PNG Optimization**: Let Pixel Powaahh work its magic on your JPEGs and PNGs. It uses cutting-edge compression techniques to shrink file sizes while keeping your images looking stunning.
+## Getting Started
 
-- **Selective Optimization**: You're in control! Choose whether you want to optimize just the JPEGs or PNGs. Pixel Powaahh lets you focus on specific formats and bring out their true potential.
+### Installation
 
-- **WebP Conversion**: Take it to the next level with WebP! Pixel Powaahh can convert your images to the ultra-efficient WebP format, giving you even smaller file sizes without sacrificing quality.
+Clone this repository and navigate to the project directory.
 
-- **Quality Control**: Find your image's sweet spot. Adjust the compression ratio (quality) for both JPEG and WebP formats. Strike the perfect balance between file size reduction and visual brilliance.
+### Usage
 
-- **Concurrent Processing**: Pixel Powaahh is lightning-fast! It unleashes the power of concurrent processing, optimizing multiple images simultaneously. Say goodbye to waiting and hello to efficiency!
+To optimize both PNG and JPEG images:
 
-### How to Unleash the Powaahh!
-
-1. Strap yourself in and download the Pixel Powaahh application to your machine.
-
-2. Execute the powerful Pixel Powaahh binary file.
-
-### Pump Up Your Images in Style!
-
-Are you ready to witness the power of Pixel Powaahh? Let's dive into some epic examples:
-
-- **Example 1**: Optimize all JPEG files in the `uploads` directory like a true pixel warrior:
-
-```
-./pixel-powaahh --jpg
+```bash
+pp.exe
 ```
 
-- **Example 2**: Take it up a notch! Optimize all PNG files in the `uploads` directory and convert them to WebP format:
+To optimize only JPEG images (with default quality 80):
 
-```
-./pixel-powaahh --png --webp
-```
-
-- **Example 3**: Push the boundaries! Optimize all image files (PNG and JPG) in the `uploads` directory but compress JPG files specifically with a compression ratio of 70:
-
-```
-./pixel-powaahh --quality 70
+```bash
+pp.exe --jpg
 ```
 
-### Disclaimer: Powaahh at Your Own Risk!
+To optimize only JPEG images with a specific quality (e.g., 90):
 
-A quick word of caution: Pixel Powaahh is not for the faint of heart. It's a project born out of pure curiosity and a desire to optimize images with a whole lot of fun. Use it at your own risk.
+```bash
+pp.exe --jpg --quality 90
+```
 
-### What's next
+To optimize PNG images using a quantization algorithm (a.k.a lossy compression):
 
-If you have any epic ideas, pixel-pounding bug reports, or feature requests share your thoughts and contribute to Pixel Powaahh on our [GitHub repository](https://github.com/keshon/pixel-powaahh).
+```bash
+pp.exe --png
+```
 
-### Why this README is so..so epic?
-I asked ChatGPT for help (thank you digital brain!).
+To convert images to the WebP format with a specific quality (default is 80):
 
-### License
-Pixel Powaahh is licensed under Unlicense whatever it means. Just play fair and be nice.
+```bash
+pp.exe --webp --quality 70
+```
+
+### Acknowledgments
+
+Pixel Powaahh makes use of the following open-source libraries:
+
+- [Go-ImageQuant](https://github.com/ultimate-guitar/go-imagequant) for PNG optimization using the quantization algorithm.
+- [Chai2010's webp](https://github.com/chai2010/webp) for WebP image encoding.

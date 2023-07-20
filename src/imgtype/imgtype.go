@@ -21,7 +21,7 @@ var supportedFormats = map[string]ImageFormat{
 	".jpg":  JPEG,
 	".jpeg": JPEG,
 	".png":  PNG,
-	".webp": WebP, // Include WebP format in the supported formats
+	".webp": WebP,
 }
 
 // GetImageFormat returns the image format based on the file extension.
