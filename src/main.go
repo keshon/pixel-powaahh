@@ -2,10 +2,14 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
-	"pixel-powaahh/src/config"
-	"pixel-powaahh/src/filesystem"
-	"pixel-powaahh/src/imageprocessing"
+	"path/filepath"
+	"pp/src/conf"
+	"pp/src/fileio"
+	"pp/src/imgconv"
+	"pp/src/imgopt"
+	"pp/src/imgtype"
 	"sync"
 
 	"github.com/spf13/cobra"
@@ -21,51 +25,52 @@ func main() {
 		Use:   "pp",
 		Short: "Pixel Powaahh - JPG and PNG optimizer and converter",
 		Run: func(cmd *cobra.Command, args []string) {
-			runPP(jpgOnly, pngOnly, toWebp, quality)
+			pp(jpgOnly, pngOnly, toWebp, quality)
 		},
 	}
 
 	rootCmd.Flags().BoolVarP(&jpgOnly, "jpg", "j", false, "Optimize JPEG files only")
 	rootCmd.Flags().BoolVarP(&pngOnly, "png", "p", false, "Optimize PNG files only")
 	rootCmd.Flags().BoolVarP(&toWebp, "webp", "w", false, "Convert images to WebP format")
-	rootCmd.Flags().IntVarP(&quality, "quality", "q", 80, "Compression ratio for JPEG or WebP")
+	rootCmd.Flags().IntVarP(&quality, "quality", "q", 80, "Compression ratio for JPEG or WebP: 1-100")
 
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 }
 
-func runPP(jpgOnly, pngOnly, toWebp bool, quality int) {
+func pp(jpgOnly, pngOnly, toWebp bool, quality int) {
+	// Create objects
+	fio := fileio.NewFileOp()
+	conv := imgconv.NewImgConvert()
+	jpeg := imgopt.NewJPEGOptimize()
+	png := imgopt.NewPNGOptimize()
+
 	// Define the input directory path to scan
-	inputDirectory := "./" + config.UPLOAD_DIR
+	inputDirectory := "./" + conf.UPLOAD_DIR
 
 	// Create the input directory if it doesn't exist
 	if err := os.MkdirAll(inputDirectory, os.ModePerm); err != nil {
-		fmt.Println("Error creating input directory:", err)
-		return
+		log.Fatalf("Error creating input directory: %v", err)
 	}
 
 	// Define the output directory path to save processed images
-	outputDirectory := "./" + config.PROCCESED_DIR
+	outputDirectory := "./" + conf.PROCCESED_DIR
 
-	// Create the output directory if it doesn't exist
+	// Create the processed directory if it doesn't exist
 	if err := os.MkdirAll(outputDirectory, os.ModePerm); err != nil {
-		fmt.Println("Error creating output directory:", err)
-		return
+		log.Fatalf("Error creating output directory: %v", err)
 	}
 
-	// Empty the processed folder
-	if err := filesystem.EmptyProcessedFolder(outputDirectory); err != nil {
-		fmt.Println("Error emptying processed folder:", err)
-		return
+	// Empty the processed directory if it exists
+	if err := fio.EmptyDir(outputDirectory); err != nil {
+		log.Fatalf("Error emptying processed folder: %v", err)
 	}
 
-	// Fetch all image files from the directory
-	imageFiles, err := filesystem.FetchImageFiles(inputDirectory)
+	// Fetch all image files from the upload directory
+	files, err := fio.FetchFiles(inputDirectory)
 	if err != nil {
-		fmt.Println("Error fetching image files:", err)
-		return
+		log.Fatalf("Error fetching image files: %v", err)
 	}
 
 	// Define the maximum number of concurrent goroutines
@@ -78,7 +83,7 @@ func runPP(jpgOnly, pngOnly, toWebp bool, quality int) {
 	semaphore := make(chan struct{}, maxConcurrency)
 
 	// Iterate over the image files and process them concurrently
-	for _, file := range imageFiles {
+	for _, file := range files {
 		semaphore <- struct{}{} // Acquire a semaphore slot
 		wg.Add(1)
 		go func(file string) {
@@ -86,11 +91,73 @@ func runPP(jpgOnly, pngOnly, toWebp bool, quality int) {
 				<-semaphore // Release the semaphore slot
 				wg.Done()
 			}()
-			if toWebp {
-				imageprocessing.ConvertToWebP(file, quality, outputDirectory)
-			} else {
-				imageprocessing.OptimizeImage(file, jpgOnly, pngOnly, quality, outputDirectory)
+
+			// Read uploaded file content
+			uploadedData, err := fio.ReadFile(inputDirectory + "/" + file)
+			if err != nil {
+				log.Printf("Error reading image data: %v", err)
+				return
 			}
+
+			// Check the file format
+			fileFormat, err := imgtype.GetImageFormat(file)
+			if err != nil {
+				log.Printf("Error detecting image format: %v", err)
+				return
+			}
+
+			var processedData []byte
+			var destFile string
+
+			destFile = filepath.Join(outputDirectory, file)
+
+			if toWebp {
+				destFile = fio.ChangeExt(destFile, ".webp")
+
+				// Convert to WebP
+				processedData, err = conv.ConvertImg(uploadedData, fileFormat, imgtype.WebP, quality)
+				if err != nil {
+					log.Printf("Error converting image: %v", err)
+					return
+				}
+
+			} else {
+
+				if fileFormat == imgtype.JPEG && pngOnly {
+					return
+				}
+
+				if fileFormat == imgtype.PNG && jpgOnly {
+					return
+				}
+
+				switch fileFormat {
+				case imgtype.JPEG:
+					// Compress JPEG
+					processedData, err = jpeg.CompressImage(uploadedData, quality)
+					if err != nil {
+						log.Printf("Error compressing image: %v", err)
+						return
+					}
+				case imgtype.PNG:
+					// Compress PNG
+					processedData, err = png.CompressImage(uploadedData, quality)
+					if err != nil {
+						log.Printf("Error compressing image: %v", err)
+						return
+					}
+				default:
+					log.Printf("Unsupported image format: %v", fileFormat)
+				}
+			}
+
+			// Save processed content to file
+			err = fio.SaveFile(destFile, processedData)
+			if err != nil {
+				log.Printf("Error saving converted image to file: %v", err)
+			}
+
+			fmt.Println("Optimization completed:", destFile)
 		}(file)
 	}
 

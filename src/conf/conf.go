@@ -1,10 +1,4 @@
-package config
-
-const (
-	JPEG ImageFormat = iota
-	PNG
-	WebP
-)
+package conf
 
 const (
 	UPLOAD_DIR    = "uploads"
