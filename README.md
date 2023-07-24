@@ -18,7 +18,7 @@ Clone this repository and navigate to the project directory.
 
 ### Usage
 
-Download the archive and unpack it. You will see two folders: `upload` and `processed`. The folder `upload` is where you copy your original images. You may copy whole foldels with nested structure - they will be preserved after optimization.
+Download the archive and unpack it. You will see two folders: `upload` and `processed`. The folder `upload` is where you copy your original images. You may copy whole foldels with nested structure.
 Once you launch the program (see examples below) the optimized images (with preserved folder structure if any) will be placed `processed` folder.
 
 To optimize both PNG and JPEG images:
