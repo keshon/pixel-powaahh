@@ -16,6 +16,8 @@ import (
 )
 
 func main() {
+	cobra.MousetrapHelpText = ""
+
 	var jpgOnly bool
 	var pngOnly bool
 	var toWebp bool
@@ -43,8 +45,8 @@ func pp(jpgOnly, pngOnly, toWebp bool, quality int) {
 	// Create objects
 	fio := fileio.NewFileOp()
 	conv := imgconv.NewImgConvert()
-	jpeg := imgopt.NewJPEGOptimize()
-	png := imgopt.NewPNGOptimize()
+	jpeg := imgopt.NewJPEGCompressor()
+	png := imgopt.NewPNGCompressor()
 
 	// Define the input directory path to scan
 	inputDirectory := "./" + conf.UPLOAD_DIR
@@ -134,14 +136,14 @@ func pp(jpgOnly, pngOnly, toWebp bool, quality int) {
 				switch fileFormat {
 				case imgtype.JPEG:
 					// Compress JPEG
-					processedData, err = jpeg.CompressImage(uploadedData, quality)
+					processedData, err = jpeg.Compress(uploadedData, quality)
 					if err != nil {
 						log.Printf("Error compressing image: %v", err)
 						return
 					}
 				case imgtype.PNG:
 					// Compress PNG
-					processedData, err = png.CompressImage(uploadedData, quality)
+					processedData, err = png.Compress(uploadedData, quality)
 					if err != nil {
 						log.Printf("Error compressing image: %v", err)
 						return

@@ -5,102 +5,57 @@ import (
 	"image"
 	"image/jpeg"
 	"image/png"
-	"log"
-
-	"github.com/ultimate-guitar/go-imagequant"
 )
 
-// ImageOptimizer is an interface for processing images.
-type ImageOptimizer interface {
-	CompressImage(imgData []byte, quality int) ([]byte, error)
+// ImageCompressor is an interface for compressing images.
+type ImageCompressor interface {
+	Compress(imageData []byte, quality int) ([]byte, error)
 }
 
-// JPEGOptimizer implements the ImageOptimizer interface for JPEG images.
-type JPEGOptimize struct{}
+// JPEGCompressor implements the ImageCompressor interface for JPEG images.
+type JPEGCompressor struct{}
 
-// NewJPEGOptimize creates a new instance of JPEGOptimize that implements the ImageOptimizer interface.
-func NewJPEGOptimize() *JPEGOptimize {
-	return &JPEGOptimize{}
+// NewJPEGCompressor creates a new instance of JPEGCompressor.
+func NewJPEGCompressor() *JPEGCompressor {
+	return &JPEGCompressor{}
 }
 
-// CompressImage compresses and encodes the JPEG image with the specified quality.
-func (jp *JPEGOptimize) CompressImage(imgData []byte, quality int) ([]byte, error) {
-	buf := new(bytes.Buffer)
-	img, _, err := image.Decode(bytes.NewReader(imgData))
+// Compress compresses and encodes the image as JPEG with the specified quality.
+func (jc *JPEGCompressor) Compress(imageData []byte, quality int) ([]byte, error) {
+	img, _, err := image.Decode(bytes.NewReader(imageData))
 	if err != nil {
-		return nil, err
+		return nil, err // Error: Unable to decode image
 	}
 
-	err = jpeg.Encode(buf, img, &jpeg.Options{Quality: quality})
+	var compressedImage bytes.Buffer
+	err = jpeg.Encode(&compressedImage, img, &jpeg.Options{Quality: quality})
 	if err != nil {
-		return nil, err
+		return nil, err // Error: Unable to encode image as JPEG
 	}
 
-	return buf.Bytes(), nil
+	return compressedImage.Bytes(), nil
 }
 
-// PNGOptimizer implements the ImageOptimizer interface for PNG images.
-type PNGOptimize struct{}
+// PNGCompressor implements the ImageCompressor interface for PNG images.
+type PNGCompressor struct{}
 
-// NewPNGOptimize creates a new instance of PNGOptimize that implements the ImageOptimizer interface.
-func NewPNGOptimize() *PNGOptimize {
-	return &PNGOptimize{}
+// NewPNGCompressor creates a new instance of PNGCompressor.
+func NewPNGCompressor() *PNGCompressor {
+	return &PNGCompressor{}
 }
 
-// CompressImage compresses and encodes the PNG image with the specified quality.
-func (pp *PNGOptimize) CompressImage(imgData []byte, _ int) ([]byte, error) {
-	buf := new(bytes.Buffer)
-	img, err := png.Decode(bytes.NewReader(imgData))
+// Compress compresses and encodes the image as PNG.
+func (pc *PNGCompressor) Compress(imageData []byte, _ int) ([]byte, error) {
+	img, err := png.Decode(bytes.NewReader(imageData))
 	if err != nil {
-		return nil, err
+		return nil, err // Error: Unable to decode image
 	}
 
-	width := img.Bounds().Dx()
-	height := img.Bounds().Dy()
-
-	attr, err := imagequant.NewAttributes()
+	var compressedImage bytes.Buffer
+	err = png.Encode(&compressedImage, img)
 	if err != nil {
-		log.Printf("failed to create image attributes: %v", err)
-		return nil, err
-	}
-	defer attr.Release()
-
-	speed := 3
-
-	err = attr.SetSpeed(speed)
-	if err != nil {
-		log.Printf("failed to set speed: %v", err)
-		return nil, err
+		return nil, err // Error: Unable to encode image as PNG
 	}
 
-	rgba32data := imageToRGBA32(img)
-
-	imq, err := imagequant.NewImage(attr, string(rgba32data), width, height, 0)
-	if err != nil {
-		log.Printf("failed to create image quantization: %v", err)
-		return nil, err
-	}
-	defer imq.Release()
-
-	res, err := imq.Quantize(attr)
-	if err != nil {
-		log.Printf("failed to perform image quantization: %v", err)
-		return nil, err
-	}
-	defer res.Release()
-
-	rgb8data, err := res.WriteRemappedImage()
-	if err != nil {
-		log.Printf("failed to write remapped image: %v", err)
-		return nil, err
-	}
-
-	prepImage := RGB8ToImage(res.GetImageWidth(), res.GetImageHeight(), rgb8data, res.GetPalette())
-
-	err = png.Encode(buf, prepImage)
-	if err != nil {
-		return nil, err
-	}
-
-	return buf.Bytes(), nil
+	return compressedImage.Bytes(), nil
 }
