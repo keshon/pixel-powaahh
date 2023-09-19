@@ -1,4 +1,8 @@
-/uploads/*
-/processed/*
 *.exe
 *.zip
+*.png
+*.jpg
+*.jpeg
+*.tiff
+*.tga
+*.ttf

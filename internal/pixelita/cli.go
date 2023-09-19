@@ -1,53 +1,31 @@
-package main
+package pixelita
 
 import (
+	"app/internal/config"
+	"app/internal/filesystem"
+	"app/internal/imageencode"
+	"app/internal/imagetype"
+	"bytes"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
-	"pp/src/conf"
-	"pp/src/fileio"
-	"pp/src/imgconv"
-	"pp/src/imgopt"
-	"pp/src/imgtype"
 	"sync"
-
-	"github.com/spf13/cobra"
 )
 
-func main() {
-	var jpgOnly bool
-	var pngOnly bool
-	var toWebp bool
-	var quality int
+func (px *Pixelita) StartCLI(jpgOnly, pngOnly, toWebp bool, quality int) {
+	var logBuffer bytes.Buffer
 
-	rootCmd := &cobra.Command{
-		Use:   "pp",
-		Short: "Pixel Powaahh - JPG and PNG optimizer and converter",
-		Run: func(cmd *cobra.Command, args []string) {
-			pp(jpgOnly, pngOnly, toWebp, quality)
-		},
-	}
+	log.SetOutput(&logBuffer)
 
-	rootCmd.Flags().BoolVarP(&jpgOnly, "jpg", "j", false, "Optimize JPEG files only")
-	rootCmd.Flags().BoolVarP(&pngOnly, "png", "p", false, "Optimize PNG files only")
-	rootCmd.Flags().BoolVarP(&toWebp, "webp", "w", false, "Convert images to WebP format")
-	rootCmd.Flags().IntVarP(&quality, "quality", "q", 80, "Compression ratio for JPEG or WebP: 1-100")
-
-	if err := rootCmd.Execute(); err != nil {
-		log.Fatal(err)
-	}
-}
-
-func pp(jpgOnly, pngOnly, toWebp bool, quality int) {
 	// Create objects
-	fio := fileio.NewFileOp()
-	conv := imgconv.NewImgConvert()
-	jpeg := imgopt.NewJPEGOptimize()
-	png := imgopt.NewPNGOptimize()
+	config := config.NewConfig()
+	fs := filesystem.NewFileSystemImpl(config)
+	jpeg := imageencode.NewJPEGEncoder()
+	png := imageencode.NewPNGEncoder()
 
 	// Define the input directory path to scan
-	inputDirectory := "./" + conf.UPLOAD_DIR
+	inputDirectory := "./" + config.UploadDir
 
 	// Create the input directory if it doesn't exist
 	if err := os.MkdirAll(inputDirectory, os.ModePerm); err != nil {
@@ -55,7 +33,7 @@ func pp(jpgOnly, pngOnly, toWebp bool, quality int) {
 	}
 
 	// Define the output directory path to save processed images
-	outputDirectory := "./" + conf.PROCCESED_DIR
+	outputDirectory := "./" + config.ProcessedDir
 
 	// Create the processed directory if it doesn't exist
 	if err := os.MkdirAll(outputDirectory, os.ModePerm); err != nil {
@@ -63,12 +41,12 @@ func pp(jpgOnly, pngOnly, toWebp bool, quality int) {
 	}
 
 	// Empty the processed directory if it exists
-	if err := fio.EmptyDir(outputDirectory); err != nil {
+	if err := fs.ClearDirectory(outputDirectory); err != nil {
 		log.Fatalf("Error emptying processed folder: %v", err)
 	}
 
 	// Fetch all image files from the upload directory
-	files, err := fio.FetchFiles(inputDirectory)
+	files, err := fs.GetImageFiles(inputDirectory)
 	if err != nil {
 		log.Fatalf("Error fetching image files: %v", err)
 	}
@@ -93,14 +71,14 @@ func pp(jpgOnly, pngOnly, toWebp bool, quality int) {
 			}()
 
 			// Read uploaded file content
-			uploadedData, err := fio.ReadFile(inputDirectory + "/" + file)
+			uploadedData, err := fs.ReadFile(inputDirectory + "/" + file)
 			if err != nil {
 				log.Printf("Error reading image data: %v", err)
 				return
 			}
 
 			// Check the file format
-			fileFormat, err := imgtype.GetImageFormat(file)
+			fileFormat, err := imagetype.New().GetFormatByExtension(file)
 			if err != nil {
 				log.Printf("Error detecting image format: %v", err)
 				return
@@ -112,10 +90,10 @@ func pp(jpgOnly, pngOnly, toWebp bool, quality int) {
 			destFile = filepath.Join(outputDirectory, file)
 
 			if toWebp {
-				destFile = fio.ChangeExt(destFile, ".webp")
+				destFile = fs.ChangeFileExtension(destFile, ".webp")
 
 				// Convert to WebP
-				processedData, err = conv.ConvertImg(uploadedData, fileFormat, imgtype.WebP, quality)
+				processedData, err = px.convertBetweenFormats(uploadedData, fileFormat, imagetype.WebP, quality)
 				if err != nil {
 					log.Printf("Error converting image: %v", err)
 					return
@@ -123,25 +101,25 @@ func pp(jpgOnly, pngOnly, toWebp bool, quality int) {
 
 			} else {
 
-				if fileFormat == imgtype.JPEG && pngOnly {
+				if fileFormat == imagetype.JPEG && pngOnly {
 					return
 				}
 
-				if fileFormat == imgtype.PNG && jpgOnly {
+				if fileFormat == imagetype.PNG && jpgOnly {
 					return
 				}
 
 				switch fileFormat {
-				case imgtype.JPEG:
+				case imagetype.JPEG:
 					// Compress JPEG
-					processedData, err = jpeg.CompressImage(uploadedData, quality)
+					processedData, err = jpeg.Encode(uploadedData, quality)
 					if err != nil {
 						log.Printf("Error compressing image: %v", err)
 						return
 					}
-				case imgtype.PNG:
+				case imagetype.PNG:
 					// Compress PNG
-					processedData, err = png.CompressImage(uploadedData, quality)
+					processedData, err = png.Encode(uploadedData, 0, 10, 100, 3)
 					if err != nil {
 						log.Printf("Error compressing image: %v", err)
 						return
@@ -152,7 +130,7 @@ func pp(jpgOnly, pngOnly, toWebp bool, quality int) {
 			}
 
 			// Save processed content to file
-			err = fio.SaveFile(destFile, processedData)
+			err = fs.SaveFile(destFile, processedData)
 			if err != nil {
 				log.Printf("Error saving converted image to file: %v", err)
 			}

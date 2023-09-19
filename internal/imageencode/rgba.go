@@ -1,4 +1,4 @@
-package imgopt
+package imageencode
 
 import (
 	"image"

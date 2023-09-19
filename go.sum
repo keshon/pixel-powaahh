@@ -1,3 +1,5 @@
+github.com/AllenDang/cimgui-go v0.0.0-20230918114712-675654f053d9 h1:tITzow7xji/fjyoGZcji6+XazqAtTUiO5T5+YJBbqh8=
+github.com/AllenDang/cimgui-go v0.0.0-20230918114712-675654f053d9/go.mod h1:UH0IZCbsJKA1hAVQQU6AIDfamqTk0/d3VucaN8lp1Gs=
 github.com/chai2010/webp v1.1.1 h1:jTRmEccAJ4MGrhFOrPMpNGIJ/eybIgwKpcACsrTEapk=
 github.com/chai2010/webp v1.1.1/go.mod h1:0XVwvZWdjjdxpUEIf7b9g9VkHFnInUSYujwqTLEuldU=
 github.com/cpuguy83/go-md2man/v2 v2.0.2/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
