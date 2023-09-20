@@ -132,7 +132,10 @@ func mainWIndow() {
 			// imgui.EndGroup()
 			imgui.TableNextColumn()
 
-			if imgui.BeginChildStrV("child", imgui.Vec2{0, height - 125}, false, imgui.WindowFlagsAlwaysAutoResize) {
+			if imgui.BeginChildStrV("child", imgui.Vec2{0, height - 140}, false, imgui.WindowFlagsAlwaysAutoResize) {
+				imgui.Text(" ")
+				imgui.SameLine()
+
 				var flags imgui.TableFlags = imgui.TableFlagsResizable + imgui.TableFlagsBorders
 				if imgui.BeginTableV("files", 5, flags, imgui.Vec2{0.0, 0.0}, 0) {
 					imgui.TableSetupColumnV("Path", imgui.TableColumnFlagsWidthStretch, 400.0, 0)
@@ -374,7 +377,7 @@ func (px *Pixelita) backendInit() {
 	io.Fonts().AddFontFromFileTTF("font", float32(20))
 
 	style := imgui.NewStyle()
-	style.SetWindowPadding(imgui.Vec2{X: 8, Y: 8})
+	style.SetWindowPadding(imgui.Vec2{X: 15, Y: 15})
 	style.SetFramePadding(imgui.Vec2{X: 10, Y: 2})
 	style.SetCellPadding(imgui.Vec2{X: 6, Y: 4})
 	style.SetItemSpacing(imgui.Vec2{X: 6, Y: 10})
