@@ -1,1 +1,0 @@
-upx --ultra-brute --no-lzma
