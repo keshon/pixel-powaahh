@@ -56,6 +56,11 @@ Pixelita is a Go-based image processing utility designed to facilitate encoding,
 - **internal:** Includes additional utility functions and configurations used within the application.
 - **filesystem:** File IO related helper object.
 
+## Acknowledgment
+
+The banner images used in this project were sourced from [Freepik](https://www.freepik.com), attributed to contributors [@Freepik](https://www.freepik.com/author/freepik) and [@starline](https://www.freepik.com/author/starline).
+
+
 ### Contribution
 
 Contributions to Pixelita are welcome! You can create issues, submit pull requests, or suggest enhancements to improve the utility.
