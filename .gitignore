@@ -6,3 +6,5 @@
 *.tiff
 *.tga
 *.ttf
+/uploads
+/processed
