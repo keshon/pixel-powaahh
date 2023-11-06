@@ -4,25 +4,22 @@ import (
 	"app/internal/config"
 	"app/internal/filesystem"
 	"app/internal/imageencode"
-	"app/internal/imagetype"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	imgui "github.com/AllenDang/cimgui-go"
 )
 
-type List struct {
-	SourcePath string
-	Path       string
-	Format     string
-	Size       string
-	Status     string
-	NewSize    string
-}
+type AppProcessStatus string
+
+const (
+	AppStatusCompress AppProcessStatus = "COMPRESS FILES"
+	AppStatusConvert  AppProcessStatus = "CONVERT FILES"
+	AppStatusWait     AppProcessStatus = "WORKING..."
+	AppStatusDone     AppProcessStatus = "CLEAR LIST"
+)
 
 var (
 	showDemoWindow bool
@@ -35,28 +32,17 @@ var (
 	maxQuality    int32
 	quality       [2]int32 = [2]int32{minQuality, maxQuality}
 	jpgQuality    int32
-
-	list      []List
-	plainList []string
-	conf      *config.Config
-
-	fs      filesystem.FileSystem
-	imgtype imagetype.ImageType
-	pngEnc  imageencode.PNGEncoder
-	jpgEnc  imageencode.JPEGEncoder
-
-	workersNum int32
-
-	status string
+	list          []ImageList
+	conf          *config.Config
+	fs            filesystem.FileSystem
+	pngEnc        imageencode.PNGEncoder
+	jpgEnc        imageencode.JPEGEncoder
+	workersNum    int32
+	status        string
 )
 
 func (px *Pixelita) StartGUI() {
 	px.backendInit()
-}
-
-func callback(data imgui.InputTextCallbackData) int {
-	fmt.Println("got call back")
-	return 0
 }
 
 func mainWIndow() {
@@ -155,13 +141,13 @@ func mainWIndow() {
 							imgui.Text(extension)
 
 							imgui.TableNextColumn()
-							imgui.Text(elem.Size)
+							imgui.Text(elem.SizeAsString)
 
 							imgui.TableNextColumn()
-							imgui.Text(elem.NewSize)
+							imgui.Text(elem.NewSizeAsString)
 
 							imgui.TableNextColumn()
-							imgui.Text(elem.Status)
+							imgui.Text(string(elem.Status))
 
 						}
 					}
@@ -180,7 +166,7 @@ func mainWIndow() {
 		imgui.SeparatorText("Actions")
 
 		if imgui.ButtonV("SCAN UPLOADS", imgui.Vec2{X: 0, Y: 48}) {
-			list = []List{}
+			list = []ImageList{}
 
 			// Check if conf.UploadDir exists, create it if it doesn't
 			_, err := os.Stat(conf.UploadDir)
@@ -194,40 +180,37 @@ func mainWIndow() {
 			}
 
 			go func() {
-				l, err := fs.GetImageFiles(conf.UploadDir)
+				fileList, err := fs.GetImageFiles(conf.UploadDir)
 				if err != nil {
 					panic("error getting image files from uploads dir")
 				}
 
-				for _, file := range l {
-					relativePath := strings.TrimPrefix(file, conf.UploadDir)
+				for _, filePath := range fileList {
+					relativePath := strings.TrimPrefix(filePath, conf.UploadDir)
 					if strings.HasPrefix(relativePath, "\\") {
 						relativePath = relativePath[1:] // Remove leading '/'
 					}
 
-					var fileSize int64
-					fileInfo, err := os.Stat(file)
+					fileInfo, err := os.Stat(filePath)
 					if err != nil {
 						fmt.Println("Error:", err)
 						return
 					}
 
-					fileSize = fileInfo.Size()
-					fileSizeString := formatFileSize(fileSize)
-					addToList(file, relativePath, filepath.Ext(file), fileSizeString)
+					addFileToList(relativePath, filepath.Ext(filePath), fileInfo.Size())
 				}
 			}()
 
-			status = "COMPRESS FILES"
+			status = string(AppStatusCompress)
 		}
 
 		imgui.SameLine()
 
 		if imgui.ButtonV(status, imgui.Vec2{X: 0, Y: 48}) {
 			if len(list) > 0 {
-				if status == "COMPRESS FILES" {
+				if status == string(AppStatusCompress) {
 					go func() {
-						status = "WORKING..."
+						status = string(AppStatusWait)
 						numWorkers := workersNum // Adjust the number of workers as needed
 						jobs := make(chan int, len(list))
 						results := make(chan CompressionResult, len(list))
@@ -247,74 +230,18 @@ func mainWIndow() {
 						for range list {
 							result := <-results
 							list[result.index].Status = result.status
-							list[result.index].NewSize = result.newSize
+							list[result.index].NewSizeAsString = result.newSize
 						}
-						// for i := range list {
-						// 	var processedData []byte
-						// 	// Read uploaded file content
-						// 	uploadedData, err := fs.ReadFile(list[i].SourcePath)
-						// 	if err != nil {
-						// 		log.Printf("Error reading image data: %v", err)
-						// 		list[i].Status = "UKNOWN"
-						// 		return
-						// 	}
 
-						// 	// Check the file format
-						// 	fileFormat, err := imagetype.New().GetFormatByExtension(list[i].Format)
-						// 	if err != nil {
-						// 		log.Printf("Error detecting image format: %v", err)
-						// 		continue
-						// 	}
-
-						// 	switch fileFormat {
-						// 	case imagetype.JPEG:
-						// 		// Compress JPEG
-						// 		processedData, err = jpgEnc.Encode(uploadedData, int(jpgQuality))
-						// 		if err != nil {
-						// 			log.Printf("Error compressing image: %v", err)
-						// 			list[i].Status = "ERROR"
-						// 			continue
-						// 		}
-						// 	case imagetype.PNG:
-						// 		// Compress PNG
-						// 		processedData, err = pngEnc.Encode(uploadedData, int(posterization), int(minQuality), int(maxQuality), int(speed))
-						// 		if err != nil {
-						// 			log.Printf("Error compressing image: %v", err)
-						// 			list[i].Status = "ERROR"
-						// 			continue
-						// 		}
-						// 	default:
-						// 		log.Printf("Unsupported image format: %v", fileFormat)
-						// 	}
-
-						// 	// Save processed content to file
-						// 	destFile := filepath.Join(conf.ProcessedDir, list[i].Path)
-						// 	err = fs.SaveFile(destFile, processedData)
-						// 	if err != nil {
-						// 		log.Printf("Error saving converted image to file: %v", err)
-						// 	}
-						// 	list[i].Status = "DONE"
-
-						// 	var fileSize int64
-						// 	fileInfo, err := os.Stat(destFile)
-						// 	if err != nil {
-						// 		fmt.Println("Error:", err)
-						// 		return
-						// 	}
-
-						// 	fileSize = fileInfo.Size()
-						// 	fileSizeString := formatFileSize(fileSize)
-						// 	list[i].NewSize = fileSizeString
-						// }
-						status = "CLEAR LIST"
+						status = string(AppStatusDone)
 					}()
 
 				}
 			}
 
-			if status == "CLEAR LIST" {
-				list = []List{}
-				status = "COMPRESS FILES"
+			if status == string(AppStatusDone) {
+				list = []ImageList{}
+				status = string(AppStatusCompress)
 			}
 		}
 
@@ -324,57 +251,25 @@ func mainWIndow() {
 	imgui.End()
 }
 
-func afterCreateContext() {
-
-}
-
 func loop() {
 	mainWIndow()
 
 }
 
-func beforeDestroyContext() {
-	imgui.PlotDestroyContext()
-}
-
 func (px *Pixelita) backendInit() {
 
-	posterization = 0
-	speed = 3
-	minQuality = int32(0)
-	maxQuality = int32(100)
-	quality = [2]int32{minQuality, maxQuality}
-	jpgQuality = 80
-	workersNum = 4
+	configureInitParameters()
+	configureFileSystem()
+	configureEncoders()
+	configureBackend()
+	configureGUIStyles()
 
-	conf = config.NewConfig()
-	fs = filesystem.NewFileSystemImpl(conf)
-	imgtype = imagetype.New()
-	pngEnc = *imageencode.NewPNGEncoder()
-	jpgEnc = *imageencode.NewJPEGEncoder()
+	backend.Run(loop)
+}
 
-	status = "COMPRESS FILES"
-
-	backend = imgui.CreateBackend(imgui.NewGLFWBackend())
-	backend.SetAfterCreateContextHook(afterCreateContext)
-	backend.SetBeforeDestroyContextHook(beforeDestroyContext)
-
-	backend.SetBgColor(imgui.NewVec4(0.45, 0.55, 0.6, 1.0))
-	backend.CreateWindow("Pixelita - JPG and PNG compressor", 1024, 580)
-
-	backend.SetDropCallback(func(p []string) {
-		fmt.Printf("drop triggered: %v", p)
-	})
-
-	backend.SetCloseCallback(func(b imgui.Backend[imgui.GLFWWindowFlags]) {
-		fmt.Println("window is closing")
-	})
-
-	// backend.SetIcons(img)
-	backend.SetTargetFPS(120)
-
+func configureGUIStyles() {
 	io := imgui.CurrentIO()
-	io.Fonts().AddFontFromFileTTF("font", float32(20))
+	io.Fonts().AddFontFromFileTTF("Ubuntu-Regular.ttf", float32(17))
 
 	style := imgui.NewStyle()
 	style.SetWindowPadding(imgui.Vec2{X: 15, Y: 15})
@@ -392,123 +287,41 @@ func (px *Pixelita) backendInit() {
 
 	io.Ctx().SetStyle(*style)
 
-	// imgui.StyleColorsLight()
-
-	backend.Run(loop)
+	// imgui.StyleColorsLight() // Light theme
 }
 
-// Create a new List instance for each image file and add it to the list slice
-func addToList(sourcePath, path string, format string, size string) {
-	image := List{
-		SourcePath: sourcePath,
-		Path:       path,
-		Format:     format,
-		Size:       size,
-	}
-
-	list = append(list, image)
-
-	// fmt.Println(list)
+func configureInitParameters() {
+	posterization = 0
+	speed = 3
+	minQuality = int32(0)
+	maxQuality = int32(100)
+	quality = [2]int32{minQuality, maxQuality}
+	jpgQuality = 80
+	workersNum = 4
 }
 
-// Function to format file size with appropriate unit (KB, MB, GB, etc.)
-func formatFileSize(fileSize int64) string {
-	const (
-		KB = 1 << 10
-		MB = 1 << 20
-		GB = 1 << 30
-		TB = 1 << 40
-		PB = 1 << 50
-		EB = 1 << 60
-	)
+func configureFileSystem() {
+	conf = config.NewConfig()
+	fs = filesystem.NewFileSystemImpl(conf)
 
-	units := []string{"B", "KB", "MB", "GB", "TB", "PB", "EB"}
-	value := float64(fileSize)
-
-	var i int
-	for i = 0; i < len(units); i++ {
-		if value < 1024 {
-			break
-		}
-		value /= 1024
-	}
-
-	return fmt.Sprintf("%.2f %s", value, units[i])
 }
 
-func worker(id int, jobs <-chan int, results chan<- CompressionResult) {
-	for i := range jobs {
-		// Process the image
-		var processedData []byte
-		// Read uploaded file content
-		uploadedData, err := fs.ReadFile(list[i].SourcePath)
-		if err != nil {
-			log.Printf("Error reading image data: %v", err)
-			list[i].Status = "UKNOWN"
-			return
-		}
+func configureEncoders() {
+	pngEnc = *imageencode.NewPNGEncoder()
+	jpgEnc = *imageencode.NewJPEGEncoder()
 
-		// Check the file format
-		fileFormat, err := imagetype.New().GetFormatByExtension(list[i].Format)
-		if err != nil {
-			log.Printf("Error detecting image format: %v", err)
-			continue
-		}
-
-		switch fileFormat {
-		case imagetype.JPEG:
-			// Compress JPEG
-			processedData, err = jpgEnc.Encode(uploadedData, int(jpgQuality))
-			if err != nil {
-				log.Printf("Error compressing image: %v", err)
-				list[i].Status = "ERROR"
-				continue
-			}
-		case imagetype.PNG:
-			// Compress PNG
-			processedData, err = pngEnc.Encode(uploadedData, int(posterization), int(minQuality), int(maxQuality), int(speed))
-			if err != nil {
-				log.Printf("Error compressing image: %v", err)
-				list[i].Status = "ERROR"
-				continue
-			}
-		default:
-			log.Printf("Unsupported image format: %v", fileFormat)
-		}
-
-		// Save processed content to file
-		destPath := filepath.Join(conf.ProcessedDir, list[i].Path)
-		err = fs.SaveFile(destPath, processedData)
-		if err != nil {
-			log.Printf("Error saving converted image to file: %v", err)
-		}
-		list[i].Status = "DONE"
-
-		var fileSize int64
-		fileInfo, err := os.Stat(destPath)
-		if err != nil {
-			fmt.Println("Error:", err)
-			return
-		}
-
-		fileSize = fileInfo.Size()
-		fileSizeString := formatFileSize(fileSize)
-		list[i].NewSize = fileSizeString
-
-		// Simulate some work (replace this with your image processing)
-		time.Sleep(time.Millisecond * 500)
-
-		// Send the result back to the main goroutine
-		results <- CompressionResult{
-			index:   i,
-			status:  "DONE",
-			newSize: fileSizeString,
-		}
-	}
+	status = string(AppStatusCompress)
 }
 
-type CompressionResult struct {
-	index   int
-	status  string
-	newSize string
+func configureBackend() {
+	backend = imgui.CreateBackend(imgui.NewGLFWBackend())
+	backend.SetBgColor(imgui.NewVec4(0.45, 0.55, 0.6, 1.0))
+	backend.CreateWindow("Pixelita - JPG and PNG compressor", 1024, 580)
+	backend.SetDropCallback(func(p []string) {
+		fmt.Printf("drop triggered: %v", p)
+	})
+	backend.SetCloseCallback(func(b imgui.Backend[imgui.GLFWWindowFlags]) {
+		fmt.Println("window is closing")
+	})
+	backend.SetTargetFPS(120)
 }
