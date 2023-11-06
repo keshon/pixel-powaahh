@@ -269,7 +269,7 @@ func (px *Pixelita) backendInit() {
 
 func configureGUIStyles() {
 	io := imgui.CurrentIO()
-	io.Fonts().AddFontFromFileTTF("Ubuntu-Regular.ttf", float32(17))
+	io.Fonts().AddFontFromFileTTF("font", float32(17))
 
 	style := imgui.NewStyle()
 	style.SetWindowPadding(imgui.Vec2{X: 15, Y: 15})
