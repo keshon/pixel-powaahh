@@ -1,11 +1,12 @@
 package pixelita
 
 import (
-	"app/internal/imagetype"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
+
+	"github.com/keshon/pixelita/internal/imagetype"
 )
 
 type ItemProcessStatus string

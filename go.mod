@@ -1,4 +1,4 @@
-module app
+module github.com/keshon/pixelita
 
 go 1.21
 

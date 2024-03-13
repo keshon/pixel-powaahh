@@ -1,13 +1,14 @@
 package pixelita
 
 import (
-	"app/internal/config"
-	"app/internal/filesystem"
-	"app/internal/imageencode"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/keshon/pixelita/internal/config"
+	"github.com/keshon/pixelita/internal/filesystem"
+	"github.com/keshon/pixelita/internal/imageencode"
 
 	imgui "github.com/AllenDang/cimgui-go"
 )
@@ -113,7 +114,7 @@ func mainWIndow() {
 			imgui.SliderInt("Min max quality", &jpgQuality, 0, 100)
 			imgui.SameLine()
 
-			// imgui.Checkbox("Show demo window", &showDemoWindow)
+			imgui.Checkbox("Show demo window", &showDemoWindow)
 
 			// imgui.EndGroup()
 			imgui.TableNextColumn()

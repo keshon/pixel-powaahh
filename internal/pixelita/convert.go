@@ -1,13 +1,14 @@
 package pixelita
 
 import (
-	"app/internal/imagetype"
 	"bytes"
 	"fmt"
 	"image"
 	"image/jpeg"
 	"image/png"
 	"log"
+
+	"github.com/keshon/pixelita/internal/imagetype"
 
 	"github.com/chai2010/webp"
 )

@@ -1,8 +1,8 @@
 package filesystem
 
 import (
-	"app/internal/config"
-	"app/internal/imagetype"
+	"github.com/keshon/pixelita/internal/config"
+	"github.com/keshon/pixelita/internal/imagetype"
 	"log"
 	"os"
 	"path/filepath"

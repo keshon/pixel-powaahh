@@ -1,3 +1,12 @@
+/uploads
+/processed
+.VSCodeCounter/
+.vscode/
+logs/
+build/
+dist/
+.tools/
+
 *.exe
 *.zip
 *.png
@@ -6,5 +15,9 @@
 *.tiff
 *.tga
 *.ttf
-/uploads
-/processed
+*.db
+.env
+*.upx
+*.exe~
+*.~
+

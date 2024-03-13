@@ -1,9 +1,10 @@
 package main
 
 import (
-	"app/internal/config"
-	"app/internal/pixelita"
 	"log"
+
+	"github.com/keshon/pixelita/internal/config"
+	"github.com/keshon/pixelita/internal/pixelita"
 
 	"github.com/spf13/cobra"
 )

@@ -1,16 +1,17 @@
 package pixelita
 
 import (
-	"app/internal/config"
-	"app/internal/filesystem"
-	"app/internal/imageencode"
-	"app/internal/imagetype"
 	"bytes"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
 	"sync"
+
+	"github.com/keshon/pixelita/internal/config"
+	"github.com/keshon/pixelita/internal/filesystem"
+	"github.com/keshon/pixelita/internal/imageencode"
+	"github.com/keshon/pixelita/internal/imagetype"
 )
 
 func (px *Pixelita) StartCLI(jpgOnly, pngOnly, toWebp bool, quality int) {

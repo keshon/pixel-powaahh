@@ -1,7 +1,7 @@
 package pixelita
 
 import (
-	"app/internal/config"
+	"github.com/keshon/pixelita/internal/config"
 )
 
 type Pixelita struct {
