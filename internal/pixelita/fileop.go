@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/keshon/pixelita/internal/imagetype"
 )
@@ -95,25 +96,40 @@ func worker(id int, jobs <-chan int, results chan<- CompressionResult) {
 			continue
 		}
 
-		switch fileFormat {
-		case imagetype.JPEG:
-			// Compress JPEG
-			processedData, err = jpgEnc.Encode(uploadedData, int(jpgQuality))
+		fmt.Println(saveAsWebP)
+		if saveAsWebP {
+			// Compress WebP
+			processedData, err = webpEnc.Encode(uploadedData, int(webpQuality), false)
 			if err != nil {
 				log.Printf("Error compressing image: %v", err)
 				list[i].Status = StatusError
 				continue
 			}
-		case imagetype.PNG:
-			// Compress PNG
-			processedData, err = pngEnc.Encode(uploadedData, int(posterization), int(minQuality), int(maxQuality), int(speed))
-			if err != nil {
-				log.Printf("Error compressing image: %v", err)
-				list[i].Status = StatusError
-				continue
+			list[i].Path = fs.ChangeFileExtension(list[i].Path, imagetype.New().GetFormatName(imagetype.WebP))
+			list[i].Path = strings.ReplaceAll(list[i].Path, "..webp", ".webp")
+			list[i].NewFormat = imagetype.New().GetFormatName(imagetype.WebP)
+		} else {
+
+			switch fileFormat {
+			case imagetype.JPEG:
+				// Compress JPEG
+				processedData, err = jpgEnc.Encode(uploadedData, int(jpgQuality))
+				if err != nil {
+					log.Printf("Error compressing image: %v", err)
+					list[i].Status = StatusError
+					continue
+				}
+			case imagetype.PNG:
+				// Compress PNG
+				processedData, err = pngEnc.Encode(uploadedData, int(posterization), int(minQuality), int(maxQuality), int(speed))
+				if err != nil {
+					log.Printf("Error compressing image: %v", err)
+					list[i].Status = StatusError
+					continue
+				}
+			default:
+				log.Printf("Unsupported image format: %v", fileFormat)
 			}
-		default:
-			log.Printf("Unsupported image format: %v", fileFormat)
 		}
 
 		// Save processed content to file

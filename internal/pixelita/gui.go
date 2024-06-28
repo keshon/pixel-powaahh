@@ -24,6 +24,7 @@ const (
 
 var (
 	showDemoWindow bool
+	saveAsWebP     bool
 
 	backend imgui.Backend[imgui.GLFWWindowFlags]
 
@@ -33,11 +34,13 @@ var (
 	maxQuality    int32
 	quality       [2]int32 = [2]int32{minQuality, maxQuality}
 	jpgQuality    int32
+	webpQuality   int32
 	list          []ImageList
 	conf          *config.Config
 	fs            filesystem.FileSystem
 	pngEnc        imageencode.PNGEncoder
 	jpgEnc        imageencode.JPEGEncoder
+	webpEnc       imageencode.WebPEncoder
 	workersNum    int32
 	status        string
 )
@@ -83,7 +86,7 @@ func mainWIndow() {
 				imgui.SetTooltip("Specifies the number of simultaneous operations that can be performed concurrently.\nHigher values may improve processing speed but consume more system resources.\nAdjust based on your system's capabilities and performance requirements.")
 			}
 
-			imgui.SeparatorText("PNG Settings (Image Quantization)")
+			imgui.SeparatorText("PNG")
 
 			imgui.SetNextItemWidth(200.0)
 			imgui.SliderInt("Posterizing level", &posterization, 0, 4)
@@ -109,12 +112,16 @@ func mainWIndow() {
 				imgui.SetTooltip("Higher speed levels disable expensive algorithms and reduce quantization precision.\nThe default speed is 3. Speed 1 gives marginally better quality at significant CPU cost.\nSpeed 10 has usually 5%% lower quality, but is 8 times faster than the default.\nHigh speeds combined with Quality parameter will use more colors than necessary\nand will be less likely to meet minimum required quality.")
 			}
 
-			imgui.SeparatorText("JPG/JPEG Settings")
+			imgui.SeparatorText("JPG/JPEG")
 			imgui.SetNextItemWidth(200.0)
 			imgui.SliderInt("Min max quality", &jpgQuality, 0, 100)
-			imgui.SameLine()
+			// imgui.SameLine()
+			imgui.SeparatorText("WEBP")
+			imgui.SetNextItemWidth(200.0)
+			imgui.SliderInt("Min max quality", &webpQuality, 0, 100)
+			imgui.Checkbox("Save as WEBP Format", &saveAsWebP)
 
-			imgui.Checkbox("Show demo window", &showDemoWindow)
+			// imgui.Checkbox("Show demo window", &showDemoWindow)
 
 			// imgui.EndGroup()
 			imgui.TableNextColumn()
@@ -310,6 +317,7 @@ func configureFileSystem() {
 func configureEncoders() {
 	pngEnc = *imageencode.NewPNGEncoder()
 	jpgEnc = *imageencode.NewJPEGEncoder()
+	webpEnc = *imageencode.NewWebPEncoder()
 
 	status = string(AppStatusCompress)
 }
